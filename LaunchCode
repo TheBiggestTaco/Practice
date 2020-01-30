@@ -1,0 +1,242 @@
+/* LaunchCode Coding Project
+ * Created by: Trevor Tomasic
+ * Date: 1/29/2020
+ * Description: Console application with multiple features to display coding ability using C#.
+ * Project displays knowledge of variables, if statements, loops, functions, and classes. 
+ * Application allows for the creation of users with password authentication and allows for 
+ * money to be deposited or withdrawn and allows users to transfer funds to eachother
+ */
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Launch_Code_Project
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            //Variables
+            string user, password;
+            bool running, running2; //Loop check 
+            Dictionary<string, string> openWith;
+            List<User> users;
+
+            //Initialization
+            openWith = new Dictionary<string, string>(); //Stores Passwords for Usernames
+            users = new List<User>(); //Stores User object profiles
+            running = true;
+            running2 = true;
+           
+            //Main Loop
+            Console.Write("Welcome to Bank One! \n");
+            //////////////////////////////////////////////////////////
+            while (running == true)
+            {
+                Console.Write("Please enter an existing username, or type \"new\" to open a new account. \n");
+                user = Console.ReadLine();
+                if (user == "new") //Get new username and password
+                {
+                    Console.Write("Please select and enter a username: \n");
+                    user = Console.ReadLine();
+                    Console.Write("Please select and enter a password: \n");
+                    password = Console.ReadLine();
+                    openWith.Add(user, password); //Ties password to username in dictionary
+                    User newUser = new User(); // Create Object for User
+                    newUser.CreateNewUser(user, password); //populates object
+                    users.Add(newUser); //adds object to list of users
+                }
+                else //Check for username existance then password
+                { 
+                    string value = "";
+                    if (openWith.TryGetValue(user, out value)) //get password from username in dictionary
+                    {
+                        Console.WriteLine("Please enter password: \n");
+                        password = Console.ReadLine();
+                        if (password == value)
+                        {
+                            Console.WriteLine("Successful Login! \n");
+                            //////////////////////////////////////////// 
+                            // Set user object from username
+                            User currentUser = new User();
+                            foreach (User cUser in users)
+                            {
+                                if (cUser.Get_Username() == user)
+                                {
+                                    currentUser = cUser;
+                                    break;
+                                }
+                            }
+                            /////////////////////////////////////////////
+                            //Logged in Loop
+                            running2 = true;
+                            while (running2 == true)
+                            {
+                                string input;
+                                Console.WriteLine(currentUser.Get_Username() + " Current Balance: " + currentUser.Get_Balance());
+                                Console.WriteLine("Enter 1 to Deposit.\n");
+                                Console.WriteLine("Enter 2 to Withdraw.\n");
+                                Console.WriteLine("Enter 3 to Transfer.\n");
+                                Console.WriteLine("Enter 4 to Logout.\n");
+                                input = Console.ReadLine();
+
+                                if (input == "1") //Deposit
+                                {
+                                    Console.WriteLine("Enter an amount to deposit.\n");
+                                    float val;
+                                    if (!float.TryParse(Console.ReadLine(), out val))
+                                    {
+                                        Console.WriteLine("Not a valid number. \n");
+                                    }
+                                    else
+                                    {
+                                        currentUser.Deposit(val);
+                                        Console.WriteLine(currentUser.Get_Username() + " New Balance: " + currentUser.Get_Balance());
+                                    }
+
+                                }
+                                else if (input == "2") //Withdraw
+                                {
+                                    Console.WriteLine("Enter an amount to withdraw.\n");
+                                    float val;
+                                    if (!float.TryParse(Console.ReadLine(), out val))
+                                    {
+                                        Console.WriteLine("Not a valid number. \n");
+                                    }
+                                    else
+                                    {
+                                        if (currentUser.Get_Balance() - val >= 0)
+                                        {
+                                            currentUser.Withdraw(val);
+                                            Console.WriteLine(currentUser.Get_Username() + " New Balance: " + currentUser.Get_Balance());
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("Not enough funds to withdraw amount. \n");
+                                        }
+                                    }
+                                }
+                                else if (input == "3") //Transfer
+                                {
+                                    Console.WriteLine("Enter name of other user to transfer amount to. \n");
+                                    User otherUser = currentUser.Check_Username(Console.ReadLine(), users);
+                                    if (otherUser != null)
+                                    {
+                                        Console.WriteLine("Enter an amount to transfer.\n");
+                                        float val;
+                                        if (!float.TryParse(Console.ReadLine(), out val))
+                                        {
+                                            Console.WriteLine("Not a valid number. \n");
+                                        }
+                                        else
+                                        {
+                                            if (currentUser.Get_Balance() - val >= 0)
+                                            {
+                                                currentUser.Withdraw(val);
+                                                otherUser.Deposit(val);
+                                                Console.WriteLine(currentUser.Get_Username() + " New Balance: " + currentUser.Get_Balance());
+                                                Console.WriteLine(otherUser.Get_Username() + " New Balance: " + otherUser.Get_Balance());
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Not enough funds to transfer amount. \n");
+                                            }
+                                        }
+                                    }
+
+                                }
+                                else if (input == "4")
+                                {
+                                    Console.WriteLine(currentUser.Get_Username() +" Logout Successful. \n");
+                                    running2 = false;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Invalid Input.\n");
+                                }
+                            }
+                            ////////////////////////////////////////////
+                        }
+                        else
+                        {
+                            Console.WriteLine("Incorrect password. \n");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Username not found. \n");
+                    }
+                }
+            }
+            //////////////////////////////////////////////////////////////
+        }
+    }
+
+    public class User //User Object for handling balance information
+    {
+        string user, password;
+        float balance;
+
+        public void CreateNewUser(string _user, string _password)
+        {
+            user = _user;
+            password = _password;
+        }
+        public string Get_Username()
+        {
+            return user;
+        }
+        public float Get_Balance()
+        {
+            return balance;
+        }
+        public void Deposit(float _value) //Deposit
+        {
+            if(_value <= 0)
+            {
+                Console.WriteLine("Value must be positive. \n");
+            }
+            else
+            {
+                balance = balance + _value;
+            }
+        }
+        public void Withdraw(float _value) //Withdraw
+        {
+            if (_value <= 0)
+            {
+                Console.WriteLine("Value must be positive. \n");
+            }
+            else
+            {
+                balance = balance - _value;
+            }
+        }
+        public User Check_Username(string _username, List<User> _users) //Check other user for transfers
+        {
+           User otherUser = new User();
+           foreach (User cUser in _users)
+           {
+                if (cUser.Get_Username() == _username)
+                {
+                       otherUser = cUser;
+                       break;
+                }
+           }
+           if(otherUser.user != _username)
+           {
+                Console.WriteLine("User doesn't exist. \n");
+                return null;
+           }
+           else
+           {
+                return otherUser;
+           }
+        }
+           
+    }
+}
